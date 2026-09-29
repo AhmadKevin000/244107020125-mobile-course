@@ -132,7 +132,7 @@ Dalam proses eksplorasi analisis tata letak, responsivitas, dan aksesibilitas da
 
 #### 1. Perbandingan Layout `GridView` vs `LayoutBuilder` + `Column`
 * **Prompt:** *"Bandingkan dua tata letak dashboard akademik untuk Flutter: versi GridView dan versi LayoutBuilder + Column. Jelaskan trade-off responsif dan aksesibilitasnya."*
-* **Hasil Analisis (Sesuai Kode):**
+* **Hasil Analisis:**
   * **`GridView` (Digunakan di `main.dart`):** Sangat efisien untuk menyusun kartu homogen secara rapi (2 kolom saat lebar $\ge 700\text{px}$ dan 1 kolom saat $< 700\text{px}$). Trade-off: Menggunakan `childAspectRatio: 2.6` yang berisiko memicu *text overflow* jika font diperbesar ekstrem pengguna.
   * **`LayoutBuilder` + `Column` (`SingleChildScrollView`):** Lebih adaptif terhadap *Dynamic Type* (skala font OS besar) karena tinggi kontainer menyesuaikan isi teks (*intrinsic height*), namun memerlukan susunan `Row`/`Column` manual untuk multi-kolom.
 
@@ -142,13 +142,13 @@ Dalam proses eksplorasi analisis tata letak, responsivitas, dan aksesibilitas da
   * **Penyebab:** `Expanded` pada `Row` hanya membatasi lebar sisa (*horizontal constraint*). `Expanded` memicu error jika berada di dalam kontainer berukuran tak terbatas (*unbounded width* seperti scrollview horizontal) atau jika konten vertikal di dalamnya melebihi tinggi `Row`.
   * **Contoh Kasus Pada Kode `ProfileHeader`:**
     ```dart
-    // ❌ GAGAL: Tanpa Expanded, teks panjang memicu RIGHT OVERFLOW BY 623 PIXELS
+    //GAGAL: Tanpa Expanded, teks panjang memicu RIGHT OVERFLOW BY 623 PIXELS
     Row(children: [
       CircleAvatar(...),
       Column(children: [ Text('Nama Mahasiswa Panjang...'), Text('NIM/Kelas') ])
     ])
 
-    // ✅ PERBAIKAN: Membungkus Column dengan Expanded (Diimplementasikan pada ProfileHeader)
+    //PERBAIKAN: Membungkus Column dengan Expanded (Diimplementasikan pada ProfileHeader)
     Row(children: [
       CircleAvatar(...),
       Expanded(child: Column(children: [ Text('Nama Mahasiswa Panjang...'), Text('NIM/Kelas') ]))
