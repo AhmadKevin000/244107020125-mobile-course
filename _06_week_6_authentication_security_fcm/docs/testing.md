@@ -23,16 +23,16 @@ Device sudah login sehingga guard rute mengizinkan akses.
 
 | # | App state | Cara menyiapkan | Yang diharapkan | Hasil | Bukti |
 |---|---|---|---|---|---|
-| 1 | **Foreground** | App terbuka & login, tidak menekan apa pun | Banner lokal muncul (dibuat manual) | ✅ | ![banner](screenshots/11-foreground-banner.png) |
-| 2 | Foreground | Ketuk banner | Pindah ke `/pengumuman/3` | ✅ | ![deeplink](screenshots/12-foreground-deeplink.png) |
-| 3 | **Background** | Tekan Home (app di belakang) | Banner sistem muncul otomatis | ✅ | ![banner](screenshots/13-background-banner.png) |
-| 4 | Background | Ketuk banner | Pindah ke `/pengumuman/3` | ✅ | ![deeplink](screenshots/14-background-deeplink.png) |
-| 5 | **Terminated** | Swipe-close dari recent apps | Banner muncul walau app mati | ✅ | ![banner](screenshots/15-terminated-banner.png) |
-| 6 | Terminated | Ketuk banner | Cold start langsung ke `/pengumuman/3` | ✅ | ![deeplink](screenshots/16-terminated-deeplink.png) |
+| 1 | **Foreground** | App terbuka & login, tidak menekan apa pun | Banner lokal muncul (dibuat manual) | ✅ | <img src="screenshots/11-foreground-banner.png" width="200" /> |
+| 2 | Foreground | Ketuk banner | Pindah ke `/pengumuman/3` | ✅ | <img src="screenshots/12-foreground-deeplink.png" width="200" /> |
+| 3 | **Background** | Tekan Home (app di belakang) | Banner sistem muncul otomatis | ✅ | <img src="screenshots/13-background-banner.png" width="200" /> |
+| 4 | Background | Ketuk banner | Pindah ke `/pengumuman/3` | ✅ | <img src="screenshots/14-background-deeplink.png" width="200" /> |
+| 5 | **Terminated** | Swipe-close dari recent apps | Banner muncul walau app mati | ✅ | <img src="screenshots/15-terminated-banner.png" width="200" /> |
+| 6 | Terminated | Ketuk banner | Cold start langsung ke `/pengumuman/3` | ✅ | <img src="screenshots/16-terminated-deeplink.png" width="200" /> |
 
 Campaign dikirim dari Firebase Console:
 
-![Konsol campaign](screenshots/17-konsol-campaign.png)
+<img src="screenshots/17-konsol-campaign.png" alt="Konsol campaign" width="900" />
 
 ## Catatan teknis
 
@@ -53,8 +53,8 @@ Campaign dikirim dari Firebase Console:
 
 | Bukti | Keterangan |
 |---|---|
-| ![token awal](screenshots/08-token-fcm.png) | Token awal (`dn1ZSLLBSF-v...`) |
-| ![token baru](screenshots/09-token-berubah.png) | Setelah rotasi (`cxhcYzs6RT-G...`) — membuktikan `onTokenRefresh` |
+| <img src="screenshots/08-token-fcm.png" width="200" /> | Token awal (`dn1ZSLLBSF-v...`) |
+| <img src="screenshots/09-token-berubah.png" width="200" /> | Setelah rotasi (`cxhcYzs6RT-G...`) — membuktikan `onTokenRefresh` |
 
 Token sengaja ditampilkan **terpotong** (12 karakter) sebagai bukti lifecycle
 tanpa membocorkan token utuh.

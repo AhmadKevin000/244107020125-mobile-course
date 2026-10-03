@@ -175,8 +175,8 @@ docs/
 (`mahasiswa@kampus.ac.id` / `rahasia123`). Pesan gagal ditampilkan lewat
 SnackBar:
 
-![Login](screenshots/01-login.png)
-![Login gagal](screenshots/02-login-gagal.png)
+<img src="screenshots/01-login.png" alt="Login" width="360" />
+<img src="screenshots/02-login-gagal.png" alt="Login gagal" width="360" />
 
 **Token disimpan aman.** Setelah login, `TokenStore.save()` menulis access &
 refresh token ke `FlutterSecureStorage`. Karena `authStateProvider`
@@ -186,14 +186,14 @@ app ditutup dan dibuka lagi.
 **Guard rute.** Membuka `/pengumuman/1` tanpa login akan dibelokkan ke
 `/login`. Setelah login, halaman daftar pengumuman tampil:
 
-![Home pengumuman](screenshots/03-home-pengumuman.png)
+<img src="screenshots/03-home-pengumuman.png" alt="Home pengumuman" width="360" />
 
 **Halaman detail** membaca konten dari satu sumber data berdasarkan `id`, jadi
 daftar dan deep link FCM menunjuk ke konten yang sama:
 
-![Detail UKT](screenshots/04-detail-ukt.png)
-![Detail beasiswa](screenshots/05-detail-beasiswa.png)
-![Detail jadwal](screenshots/06-detail-jadwal.png)
+<img src="screenshots/04-detail-ukt.png" alt="Detail UKT" width="300" />
+<img src="screenshots/05-detail-beasiswa.png" alt="Detail beasiswa" width="300" />
+<img src="screenshots/06-detail-jadwal.png" alt="Detail jadwal" width="300" />
 
 ### Langkah 2 — Praktikum 2: Firebase & FCM setup
 
@@ -206,22 +206,22 @@ daftar dan deep link FCM menunjuk ke konten yang sama:
 
 **Izin notifikasi** diminta saat pertama kali app berjalan:
 
-![Izin notifikasi](screenshots/07-izin-notifikasi.png)
+<img src="screenshots/07-izin-notifikasi.png" alt="Izin notifikasi" width="360" />
 
 **Token lifecycle.** `initFcmToken()` mengambil token awal lewat `getToken()`
 (dengan timeout 10 detik agar tidak memblokir startup), lalu memantau
 perubahan lewat `onTokenRefresh`. Kartu Debug FCM menampilkan token
 **terpotong** (12 karakter) untuk bukti lifecycle tanpa membocorkan token utuh:
 
-![Token FCM](screenshots/08-token-fcm.png)
-![Token berubah](screenshots/09-token-berubah.png)
+<img src="screenshots/08-token-fcm.png" alt="Token FCM" width="300" />
+<img src="screenshots/09-token-berubah.png" alt="Token berubah" width="300" />
 
 Kedua screenshot menampilkan token yang **berbeda** (`dn1ZSLLBSF-v...` vs
 `cxhcYzs6RT-G...`), membuktikan `onTokenRefresh` bekerja.
 
 **Notifikasi diterima** di emulator:
 
-![Notifikasi masuk](screenshots/10-notifikasi-masuk.png)
+<img src="screenshots/10-notifikasi-masuk.png" alt="Notifikasi masuk" width="360" />
 
 ### Langkah 3 — Praktikum 3: Handler 3 kondisi + deep link
 
@@ -257,16 +257,16 @@ Payload uji: title `Jadwal kuliah berubah`, body
 
 | Kondisi | Kondisi app | Yang diharapkan | Hasil | Bukti |
 |---|---|---|---|---|
-| Foreground | App terbuka | Banner lokal muncul | ✅ | ![fg](screenshots/11-foreground-banner.png) |
-| Foreground | Setelah diketuk | Pindah ke `/pengumuman/3` | ✅ | ![fg-link](screenshots/12-foreground-deeplink.png) |
-| Background | Ditekan Home | Banner sistem muncul | ✅ | ![bg](screenshots/13-background-banner.png) |
-| Background | Setelah diketuk | Pindah ke `/pengumuman/3` | ✅ | ![bg-link](screenshots/14-background-deeplink.png) |
-| Terminated | App dimatikan | Banner muncul | ✅ | ![term](screenshots/15-terminated-banner.png) |
-| Terminated | Setelah diketuk | Cold start langsung ke `/pengumuman/3` | ✅ | ![term-link](screenshots/16-terminated-deeplink.png) |
+| Foreground | App terbuka | Banner lokal muncul | ✅ | <img src="screenshots/11-foreground-banner.png" width="200" /> |
+| Foreground | Setelah diketuk | Pindah ke `/pengumuman/3` | ✅ | <img src="screenshots/12-foreground-deeplink.png" width="200" /> |
+| Background | Ditekan Home | Banner sistem muncul | ✅ | <img src="screenshots/13-background-banner.png" width="200" /> |
+| Background | Setelah diketuk | Pindah ke `/pengumuman/3` | ✅ | <img src="screenshots/14-background-deeplink.png" width="200" /> |
+| Terminated | App dimatikan | Banner muncul | ✅ | <img src="screenshots/15-terminated-banner.png" width="200" /> |
+| Terminated | Setelah diketuk | Cold start langsung ke `/pengumuman/3` | ✅ | <img src="screenshots/16-terminated-deeplink.png" width="200" /> |
 
 Campaign dikirim dari Firebase Console (Messaging):
 
-![Konsol campaign](screenshots/17-konsol-campaign.png)
+<img src="screenshots/17-konsol-campaign.png" alt="Konsol campaign" width="900" />
 
 **Catatan penting:** pada background & terminated, banner ditampilkan oleh
 sistem Android memakai channel notifikasi. Supaya muncul **heads-up banner**
