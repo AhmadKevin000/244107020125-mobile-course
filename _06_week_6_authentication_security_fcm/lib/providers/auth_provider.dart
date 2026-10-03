@@ -14,6 +14,8 @@ final apiClientProvider = Provider<Dio>((ref) {
   return buildApiClient(
     ref.watch(tokenStoreProvider),
     ref.watch(authRepositoryProvider),
+    // Refresh token mati -> bersihkan sesi dan paksa guard mengarahkan ke login.
+    onSessionExpired: () => ref.read(authStateProvider.notifier).logout(),
   );
 });
 

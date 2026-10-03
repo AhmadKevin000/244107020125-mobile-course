@@ -20,6 +20,22 @@ NIM: 244107020125
   terminated, termasuk deep link ke halaman pengumuman.
 - Menguji logika rute dan pemetaan error dengan unit test murni.
 
+## Fitur Utama
+
+- **Login dengan guard rute** — halaman privat selalu diarahkan ke `/login`
+  bila belum ada sesi.
+- **Penyimpanan token aman** — access & refresh token di `flutter_secure_storage`
+  (Keychain/Keystore), bukan SharedPreferences.
+- **Refresh token otomatis** — Dio menyisipkan access token dan, saat `401`,
+  refresh sekali lalu mengulang request; bila refresh mati, sesi dibersihkan
+  dan pengguna diarahkan login ulang.
+- **FCM terintegrasi** — permission, `getToken` + `onTokenRefresh`, dan
+  subscribe topik `pengumuman-kampus`.
+- **Notifikasi 3 state** — foreground (banner manual), background, dan
+  terminated, semuanya dapat membuka deep link ke `/pengumuman/:id`.
+- **Unit test** — 19 test untuk parsing route, logika sesi/refresh, dan
+  pemetaan error.
+
 ## Stack Teknologi
 
 - Flutter (Material 3)
@@ -62,12 +78,16 @@ dienkripsi di level OS (Keychain iOS, Keystore Android).
 1. **onRequest** — menyisipkan `Authorization: Bearer <access>`.
 2. **onError** — saat balasan `401`:
    - jika request ini **sudah** pernah di-retry (ditandai `extra`), token
-     dianggap mati → `store.clear()` dan error diteruskan;
+     dianggap mati → `store.clear()` + `onSessionExpired()` dan error
+     diteruskan;
+   - jika refresh token tidak ada, langsung `onSessionExpired()`;
    - jika belum, refresh token ditukar lewat `AuthRepository.refresh()`,
      token baru disimpan, lalu request asli diulang **sekali**.
 
 Penanda `_retriedAfterRefresh` mencegah loop refresh tanpa henti bila server
-terus membalas `401`.
+terus membalas `401`. Callback `onSessionExpired` dipakai provider untuk
+memanggil `logout()` sehingga guard langsung mengarahkan pengguna ke `/login`
+tanpa menunggu restart aplikasi.
 
 ### Guard rute
 
@@ -106,6 +126,12 @@ Tiga kondisi notifikasi:
 | Background | `onMessageOpenedApp` | banner dari sistem, klik → `router.go` |
 | Terminated | `getInitialMessage()` | app cold start, langsung ke route notifikasi |
 
+**Pengiriman token ke backend.** Backend belum tersedia, jadi kontraknya
+didokumentasikan: `POST /devices` dengan body
+`{ "fcm_token": "<token>", "platform": "android" }`. Titik integrasinya ada di
+`main.dart` pada callback `onToken` milik `initFcmToken()` — token awal dari
+`getToken()` maupun token baru dari `onTokenRefresh` melewati jalur yang sama.
+
 ## Struktur Project
 
 ```
@@ -131,7 +157,12 @@ lib/
 
 test/
 ├── deep_link_test.dart             # unit test routeFromMessage + AppRoute
-└── auth_test.dart                  # unit test AuthRepository + messageForError
+├── auth_test.dart                  # unit test AuthRepository + messageForError
+└── refresh_test.dart               # unit test interceptor refresh 401 + sesi mati
+
+docs/
+├── ai-challenge.md                 # prompt, output awal AI, perbaikan, checklist
+└── testing.md                      # tabel hasil uji tiga app state
 ```
 
 ---
@@ -218,6 +249,8 @@ tersedia `subscribeTopic()` / `unsubscribeTopic()` untuk kontrol manual.
 
 ### Verifikasi manual — matriks 3 kondisi FCM
 
+Tabel lengkap beserta catatan teknis ada di [docs/testing.md](docs/testing.md).
+
 Payload uji: title `Jadwal kuliah berubah`, body
 `Kelas Mobile pindah ke Ruang A2 jam 13.00`, custom data
 `route=/pengumuman/3`.
@@ -256,12 +289,13 @@ tugas diawali underscore mengikuti struktur repo kursus) yang dibiarkan.
 flutter test
 ```
 
-Hasil: **16 test lolos**.
+Hasil: **19 test lolos**.
 
 | File | Cakupan |
 |---|---|
 | `test/deep_link_test.dart` | `routeFromMessage()` (route eksplisit, fallback `id`, data kosong, route tidak valid) dan `AppRoute.announcementOf()` |
 | `test/auth_test.dart` | `AuthRepository` (login sukses/gagal, refresh sukses/gagal) dan `messageForError()` (401, 404, 5xx, timeout, connection error, Exception biasa) |
+| `test/refresh_test.dart` | interceptor Dio: refresh sekali lalu ulang request, refresh mati memanggil `onSessionExpired` + bersihkan sesi, dan `401` berulang tidak loop |
 
 ---
 
@@ -294,24 +328,63 @@ flutter test
 
 ## Refleksi
 
-**Mengapa token tidak boleh di SharedPreferences?**
-SharedPreferences menyimpan data sebagai teks polos yang bisa dibaca lewat
-backup atau akses root. Access/refresh token adalah kredensial setara kata
-sandi; `FlutterSecureStorage` menyimpannya di Keychain/Keystore yang dienkripsi
-OS, sehingga kebocoran file preferensi tidak otomatis membocorkan sesi.
+**1. Mengapa refresh token tidak boleh disimpan di SharedPreferences? Apa risikonya bila bocor?**
 
-**Mengapa refresh 401 hanya boleh di-retry sekali?**
-Tanpa penanda, server yang terus membalas `401` akan memicu refresh berulang
-tanpa henti (loop) dan membebani backend. Menandai request yang sudah di-retry
-membuat percobaan kedua menyerah dan memaksa login ulang — kegagalan yang jelas
-lebih baik daripada loop yang senyap.
+SharedPreferences menyimpan data sebagai teks polos di file preferensi aplikasi
+(`shared_prefs/*.xml`). Siapa pun yang bisa membaca file itu — lewat backup,
+perangkat yang di-root, atau kerentanan lain — langsung memperoleh refresh
+token. Refresh token berumur panjang dan bisa menukar access token baru
+berulang kali, jadi kebocorannya setara menyerahkan sesi login sepenuhnya:
+penyerang bisa terus membuat access token baru meski access token lama sudah
+kedaluwarsa, tanpa perlu tahu kata sandi pengguna. `FlutterSecureStorage`
+menyimpannya di Keychain (iOS) / Keystore (Android) yang dienkripsi OS,
+sehingga kebocoran file preferensi biasa tidak otomatis membocorkan sesi.
 
-**Mengapa handler FCM dipisah dari router?**
-Handler background berjalan di isolate terpisah tanpa `BuildContext`, jadi
-tidak boleh menyentuh widget atau Riverpod. Dengan menyuntikkan `go` lewat
-`attachRouter`, `push_service.dart` tetap bebas dari ketergantungan UI dan
-logika penentuan route (`routeFromMessage`) menjadi fungsi murni yang mudah
-diuji.
+**2. Apa yang rusak bila onTokenRefresh diabaikan selama satu semester perkuliahan?**
+
+Token FCM berubah tanpa pemberitahuan: saat aplikasi di-install ulang, data
+dibersihkan, perangkat dipulihkan dari backup, atau Firebase memutar token
+karena alasan keamanan. Tanpa `onTokenRefresh`, backend terus menyimpan token
+lama dan mengirim notifikasi ke alamat yang sudah mati. Gejalanya berbahaya
+karena **gagal secara senyap**: pengiriman dari console tampak "sukses", tetapi
+tidak ada satu pun mahasiswa yang menerima pengumuman. Setelah satu semester,
+praktis seluruh perangkat sudah punya token baru sementara backend masih
+memegang token basi — notifikasi berhenti total tanpa satu pun error yang
+terlihat.
+
+**3. Kapan memakai topik dan kapan memakai token perangkat? Beri contoh pesan kampus untuk masing-masing.**
+
+- **Topik** dipakai untuk siaran massal ke kelompok yang besar dan dinamis,
+  ketika tidak praktis menyimpan daftar token satu per satu.
+  Contoh pesan kampus: *"Pemeliharaan sistem akademik Sabtu 02.00–04.00"* yang
+  dikirim ke topik `pengumuman-kampus` untuk **semua** mahasiswa.
+- **Token perangkat** dipakai untuk pesan yang ditargetkan ke satu orang atau
+  satu perangkat, yang isinya personal dan tidak boleh dilihat orang lain.
+  Contoh pesan kampus: *"Nilai Kuis 2 Anda sudah keluar, silakan cek SIAKAD"*
+  yang hanya dikirim ke token milik mahasiswa bersangkutan.
+
+Aturan praktisnya: **topik untuk "satu pesan ke banyak orang"**, **token untuk
+"pesan spesifik ke satu orang"**.
+
+**4. Bagian mana dari draf AI yang Anda tolak atau perbaiki, dan mengapa?**
+
+Tujuh perbaikan didokumentasikan di [docs/ai-challenge.md](docs/ai-challenge.md).
+Yang paling menentukan:
+
+- **Notifikasi background hanya berbunyi tanpa banner.** Draf tidak menyentuh
+  notification channel. Sistem Android memakai channel default ber-importance
+  rendah, jadi tidak ada heads-up banner. Diperbaiki dengan meta-data
+  `default_notification_channel_id` dan channel `pengumuman` importance tinggi
+  yang dibuat eksplisit. Ini hanya ketahuan lewat pengujian manual di device.
+- **`refreshListenable` berupa boolean.** Saat status auth berubah
+  `false → false`, notifier tidak mengirim sinyal sehingga guard tidak
+  dijalankan ulang. Diganti `ValueNotifier<int>` yang selalu naik.
+- **`getToken()` tanpa timeout** berisiko menahan startup. Dibatasi 10 detik.
+- **API `flutter_local_notifications` v22 memakai named argument**, bukan
+  positional seperti draf — draf tidak bisa dikompilasi.
+- **Sesi tidak langsung logout saat refresh mati.** Draf hanya memanggil
+  `store.clear()` tanpa memberi tahu state auth. Ditambah callback
+  `onSessionExpired` → `logout()` agar guard segera mengarahkan ke `/login`.
 
 ## Kesimpulan
 

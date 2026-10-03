@@ -9,7 +9,15 @@ const _retriedAfterRefresh = 'retried_after_refresh';
 
 /// Dio client yang menyisipkan access token ke tiap request dan, saat kena 401,
 /// refresh sekali lalu mengulang request aslinya.
-Dio buildApiClient(TokenStore store, AuthRepository auth) {
+///
+/// [onSessionExpired] dipanggil ketika refresh token ikut mati atau request
+/// ulangan masih 401. Setelah itu sesi tidak bisa dipulihkan, jadi pemanggil
+/// (provider) berkewajiban mengarahkan pengguna kembali ke login.
+Dio buildApiClient(
+  TokenStore store,
+  AuthRepository auth, {
+  Future<void> Function()? onSessionExpired,
+}) {
   final dio = Dio(BaseOptions(baseUrl: 'https://example-campus-api.test'));
   dio.interceptors.add(
     InterceptorsWrapper(
@@ -26,10 +34,14 @@ Dio buildApiClient(TokenStore store, AuthRepository auth) {
         }
         if (error.requestOptions.extra[_retriedAfterRefresh] == true) {
           await store.clear();
+          await onSessionExpired?.call();
           return handler.next(error);
         }
         final refresh = await store.readRefresh();
-        if (refresh == null) return handler.next(error);
+        if (refresh == null) {
+          await onSessionExpired?.call();
+          return handler.next(error);
+        }
 
         try {
           final renewed = await auth.refresh(refresh);
@@ -43,6 +55,7 @@ Dio buildApiClient(TokenStore store, AuthRepository auth) {
         } catch (_) {
           // Refresh token ikut mati, satu-satunya jalan adalah login ulang.
           await store.clear();
+          await onSessionExpired?.call();
           handler.next(error);
         }
       },
