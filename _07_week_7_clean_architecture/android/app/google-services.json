@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "767304980182",
+    "project_id": "campus-notify-3bc1d",
+    "storage_bucket": "campus-notify-3bc1d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:767304980182:android:9625e9986b3b51e3979b77",
+        "android_client_info": {
+          "package_name": "com.example.u_06_week_6_authentication_security_fcm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_QPzenE1Ugpa57BAKXMi8qoFhJkTjM-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:767304980182:android:9fa7fdcfd7450f75979b77",
+        "android_client_info": {
+          "package_name": "com.example.u_07_week_7_clean_architecture"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_QPzenE1Ugpa57BAKXMi8qoFhJkTjM-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
