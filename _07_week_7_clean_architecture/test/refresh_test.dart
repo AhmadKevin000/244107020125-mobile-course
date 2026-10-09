@@ -4,9 +4,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:_07_week_7_clean_architecture/data/api_client.dart';
-import 'package:_07_week_7_clean_architecture/data/auth_repository.dart';
-import 'package:_07_week_7_clean_architecture/data/token_store.dart';
+import 'package:_07_week_7_clean_architecture/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:_07_week_7_clean_architecture/features/auth/data/repositories/session_repository_impl.dart';
+import 'package:_07_week_7_clean_architecture/features/auth/domain/entities/auth_session.dart';
+import 'package:_07_week_7_clean_architecture/infrastructure/network/api_client.dart';
 
 /// Adapter Dio tiruan supaya test tidak menyentuh jaringan sungguhan.
 class _FakeAdapter implements HttpClientAdapter {
@@ -41,15 +42,18 @@ void main() {
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
   test('401 di-refresh sekali lalu request diulang dan berhasil', () async {
-    final store = TokenStore();
-    await store.save(access: 'access-lama', refresh: 'refresh-hidup');
+    final store = SessionRepositoryImpl();
+    await store.save(
+      const AuthSession(access: 'access-lama', refresh: 'refresh-hidup'),
+    );
 
     final adapter = _FakeAdapter((options) {
       final auth = options.headers['Authorization'];
       if (auth == 'Bearer access-lama') return Future.value(_json(401, '{}'));
       return Future.value(_json(200, '{"ok":true}'));
     });
-    final dio = buildApiClient(store, AuthRepository())..httpClientAdapter = adapter;
+    final dio = buildApiClient(store, AuthRepositoryImpl())
+      ..httpClientAdapter = adapter;
 
     final res = await dio.get<dynamic>('/pengumuman');
 
@@ -59,15 +63,15 @@ void main() {
 
   test('refresh mati memanggil onSessionExpired dan membersihkan sesi',
       () async {
-    final store = TokenStore();
-    // Refresh token kosong -> AuthRepository.refresh melempar.
-    await store.save(access: 'access-lama', refresh: '');
+    final store = SessionRepositoryImpl();
+    // Refresh token kosong -> AuthRepository.refresh mengembalikan failure.
+    await store.save(const AuthSession(access: 'access-lama', refresh: ''));
 
     var expired = false;
     final adapter = _FakeAdapter((_) => Future.value(_json(401, '{}')));
     final dio = buildApiClient(
       store,
-      AuthRepository(),
+      AuthRepositoryImpl(),
       onSessionExpired: () async => expired = true,
     )..httpClientAdapter = adapter;
 
@@ -81,14 +85,16 @@ void main() {
   });
 
   test('401 berulang tidak loop dan memanggil onSessionExpired', () async {
-    final store = TokenStore();
-    await store.save(access: 'access-lama', refresh: 'refresh-hidup');
+    final store = SessionRepositoryImpl();
+    await store.save(
+      const AuthSession(access: 'access-lama', refresh: 'refresh-hidup'),
+    );
 
     var expired = false;
     final adapter = _FakeAdapter((_) => Future.value(_json(401, '{}')));
     final dio = buildApiClient(
       store,
-      AuthRepository(),
+      AuthRepositoryImpl(),
       onSessionExpired: () async => expired = true,
     )..httpClientAdapter = adapter;
 

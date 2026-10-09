@@ -4,8 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'messaging/push_service.dart';
-import 'providers/push_provider.dart';
+import 'infrastructure/messaging/push_provider.dart';
+import 'infrastructure/messaging/push_service.dart';
 import 'router.dart';
 
 Future<void> main() async {

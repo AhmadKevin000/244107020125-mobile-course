@@ -1,36 +1,45 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:_07_week_7_clean_architecture/data/api_errors.dart';
-import 'package:_07_week_7_clean_architecture/data/auth_repository.dart';
+import 'package:_07_week_7_clean_architecture/core/failures.dart';
+import 'package:_07_week_7_clean_architecture/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:_07_week_7_clean_architecture/infrastructure/network/api_error_mapper.dart';
 
 void main() {
-  group('AuthRepository', () {
-    final repo = AuthRepository();
+  group('AuthRepositoryImpl', () {
+    final repo = AuthRepositoryImpl();
 
-    test('login berhasil mengembalikan access dan refresh token', () async {
-      final session = await repo.login(
+    test('authenticate berhasil mengembalikan access dan refresh token',
+        () async {
+      final result = await repo.authenticate(
         email: 'mahasiswa@kampus.ac.id',
         password: 'rahasia123',
       );
-      expect(session.access, isNotEmpty);
-      expect(session.refresh, isNotEmpty);
+      expect(result.failure, isNull);
+      expect(result.session, isNotNull);
+      expect(result.session!.access, isNotEmpty);
+      expect(result.session!.refresh, isNotEmpty);
     });
 
-    test('login gagal saat kredensial salah', () {
-      expect(
-        () => repo.login(email: 'salah@kampus.ac.id', password: 'salah'),
-        throwsA(isA<Exception>()),
+    test('authenticate gagal saat kredensial salah', () async {
+      final result = await repo.authenticate(
+        email: 'salah@kampus.ac.id',
+        password: 'salah',
       );
+      expect(result.failure, isA<AuthFailure>());
+      expect(result.session, isNull);
     });
 
     test('refresh mengembalikan access token baru', () async {
-      final renewed = await repo.refresh('mock-refresh');
-      expect(renewed, startsWith('mock-access-renewed-'));
+      final result = await repo.refresh('mock-refresh');
+      expect(result.failure, isNull);
+      expect(result.access, startsWith('mock-access-renewed-'));
     });
 
-    test('refresh menolak token kosong', () {
-      expect(() => repo.refresh(''), throwsA(isA<Exception>()));
+    test('refresh menolak token kosong', () async {
+      final result = await repo.refresh('');
+      expect(result.failure, isNotNull);
+      expect(result.access, isNull);
     });
   });
 
@@ -75,6 +84,13 @@ void main() {
     test('Exception biasa tampil tanpa prefix teknis', () {
       expect(
         messageForError(Exception('Email atau kata sandi tidak valid')),
+        'Email atau kata sandi tidak valid',
+      );
+    });
+
+    test('Failure diteruskan apa adanya', () {
+      expect(
+        messageForError(const AuthFailure('Email atau kata sandi tidak valid')),
         'Email atau kata sandi tidak valid',
       );
     });
